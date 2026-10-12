@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In - Athenaeum Digital Library{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+      <div class="form-card">
+        <div class="text-center mb-4">
+          <div class="brand-icon-box mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem;">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h2 class="h3 fw-bold mb-1">Welcome Back</h2>
+          <p class="text-muted small">Sign in to your library account to manage loans & read e-books</p>
+        </div>
+
+        {% if form.errors %}
+          <div class="alert alert-danger shadow-sm small py-2">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Invalid username or password. Please try again.
+          </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-person text-muted"></i></span>
+              <input type="text" name="username" id="id_username" class="form-control" placeholder="Enter your username" autofocus required>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="id_password" class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-key text-muted"></i></span>
+              <input type="password" name="password" id="id_password" class="form-control" placeholder="Enter your password" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary-custom w-100 py-2 justify-content-center fs-6 mb-3">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Library
+          </button>
+        </form>
+
+        <!-- Quick Demo Credentials Helper for Testing -->
+        <div class="p-3 bg-light rounded-3 border mt-3">
+          <div class="fw-bold small text-dark mb-2"><i class="bi bi-stars text-warning me-1"></i>Demo Test Accounts</div>
+          <div class="d-flex flex-column gap-2 small">
+            <div class="p-2 bg-white rounded border d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Staff Librarian:</strong> <code>librarian</code> / <code>admin1234</code>
+              </div>
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="fillCreds('librarian', 'admin1234')">Use</button>
+            </div>
+            <div class="p-2 bg-white rounded border d-flex justify-content-between align-items-center">
+              <div>
+                <strong>Member:</strong> <code>alex_reader</code> / <code>member1234</code>
+              </div>
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="fillCreds('alex_reader', 'member1234')">Use</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-4 small text-muted">
+          Don't have a library card yet?
+          <a href="{% url 'register' %}" class="fw-bold text-primary text-decoration-none">Register as Member</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function fillCreds(u, p) {
+    document.getElementById('id_username').value = u;
+    document.getElementById('id_password').value = p;
+  }
+</script>
+{% endblock %}

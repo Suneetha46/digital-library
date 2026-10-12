@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Athenaeum Digital Library{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'staff_circulation_portal' %}">Circulation Desk</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+      </nav>
+
+      <div class="form-card">
+        <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+          <div class="brand-icon-box" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6);">
+            <i class="bi bi-book"></i>
+          </div>
+          <div>
+            <h2 class="h4 fw-bold mb-0">{{ title }}</h2>
+            <p class="text-muted small mb-0">Manage catalog records, inventory copies, and publication details</p>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger shadow-sm">
+            {% for error in form.non_field_errors %}
+              <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label" for="id_title">Book Title <span class="text-danger">*</span></label>
+              {{ form.title }}
+              {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="id_author">Author <span class="text-danger">*</span></label>
+              <div class="input-group">
+                {{ form.author }}
+                <a href="{% url 'add_author' %}" class="btn btn-outline-secondary" title="Add new author" target="_blank">
+                  <i class="bi bi-plus"></i>
+                </a>
+              </div>
+              {% if form.author.errors %}<div class="text-danger small mt-1">{{ form.author.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_isbn">ISBN (Unique) <span class="text-danger">*</span></label>
+              {{ form.isbn }}
+              {% if form.isbn.errors %}<div class="text-danger small mt-1">{{ form.isbn.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_genre">Genre Category <span class="text-danger">*</span></label>
+              {{ form.genre }}
+              {% if form.genre.errors %}<div class="text-danger small mt-1">{{ form.genre.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_total_copies">Total Catalog Copies <span class="text-danger">*</span></label>
+              {{ form.total_copies }}
+              <div class="form-text small">Total physical inventory owned by the library.</div>
+              {% if form.total_copies.errors %}<div class="text-danger small mt-1">{{ form.total_copies.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_available_copies">Available Copies (In Stock) <span class="text-danger">*</span></label>
+              {{ form.available_copies }}
+              <div class="form-text small">Must be &le; Total Copies.</div>
+              {% if form.available_copies.errors %}<div class="text-danger small mt-1">{{ form.available_copies.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_cover_url">Cover Image URL (Web Link)</label>
+              {{ form.cover_url }}
+              <div class="form-text small">High-resolution cover image URL.</div>
+              {% if form.cover_url.errors %}<div class="text-danger small mt-1">{{ form.cover_url.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_cover_image">Or Upload Cover File</label>
+              {{ form.cover_image }}
+              {% if form.cover_image.errors %}<div class="text-danger small mt-1">{{ form.cover_image.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="id_publisher">Publisher</label>
+              {{ form.publisher }}
+              {% if form.publisher.errors %}<div class="text-danger small mt-1">{{ form.publisher.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="id_publication_year">Year of Publication</label>
+              {{ form.publication_year }}
+              {% if form.publication_year.errors %}<div class="text-danger small mt-1">{{ form.publication_year.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="id_language">Language</label>
+              {{ form.language }}
+              {% if form.language.errors %}<div class="text-danger small mt-1">{{ form.language.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="id_description">Book Synopsis / Description</label>
+              {{ form.description }}
+              {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <div class="form-check form-switch p-3 bg-light rounded border">
+                {{ form.is_ebook_available }}
+                <label class="form-check-label fw-semibold" for="id_is_ebook_available">
+                  Enable Digital E-Book Circulation Badge
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-4">
+            <a href="{% url 'staff_circulation_portal' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary-custom px-4 py-2">
+              <i class="bi bi-check2-circle me-1"></i> Save Book Record
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

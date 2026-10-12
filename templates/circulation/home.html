@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Digital Library & E-Book Circulation Portal | Discover Books{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-glow-blob"></div>
+  <div class="container-fluid px-lg-5">
+    <div class="row align-items-center">
+      <div class="col-lg-8 mx-auto text-center">
+        <div class="hero-tag">
+          <i class="bi bi-stars text-warning"></i> Next-Gen Digital Repository & Circulation
+        </div>
+        <h1 class="hero-title">
+          Explore Knowledge Without Limits on <span class="gradient-text">Athenaeum</span>
+        </h1>
+        <p class="hero-subtitle mx-auto">
+          Instant access to world-class books, research manuscripts, and digital editions. Borrow in seconds, track due dates with zero friction, and manage circulation effortlessly.
+        </p>
+
+        <!-- Search Box -->
+        <div class="search-card-wrapper max-w-750 mx-auto">
+          <form method="GET" action="{% url 'home' %}" class="d-flex flex-column flex-sm-row gap-2">
+            <div class="search-input-group flex-grow-1">
+              <i class="bi bi-search"></i>
+              <input
+                type="text"
+                id="book-live-search"
+                name="q"
+                value="{{ search_query }}"
+                class="search-input-field"
+                placeholder="Search by title, author name, genre, or ISBN..."
+                autocomplete="off"
+                aria-label="Search books"
+              >
+              <button type="button" id="clear-search-btn" class="btn btn-sm btn-link text-muted p-0 me-2" style="display: none;" title="Clear search">
+                <i class="bi bi-x-circle-fill fs-5"></i>
+              </button>
+            </div>
+            
+            <button type="submit" class="btn btn-primary-custom px-4 py-2">
+              <i class="bi bi-filter"></i> Search
+            </button>
+          </form>
+
+          <!-- Genre Filter Pills -->
+          <div class="genre-pills-bar justify-content-center">
+            <button type="button" class="genre-pill-btn {% if not selected_genre %}active{% endif %}" data-genre="all">
+              <i class="bi bi-grid-fill me-1"></i> All Genres
+            </button>
+            {% for g in all_genres %}
+              <button type="button" class="genre-pill-btn {% if selected_genre == g %}active{% endif %}" data-genre="{{ g|lower }}">
+                {{ g }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Showcase Bar -->
+<section class="container-fluid px-lg-5 mb-5">
+  <div class="stat-card-row">
+    <div class="row g-3">
+      <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper stat-icon-indigo">
+            <i class="bi bi-journal-richtext"></i>
+          </div>
+          <div>
+            <div class="stat-number counter-animate" data-target="{{ total_books_count }}">{{ total_books_count }}</div>
+            <div class="stat-label">Book Titles in Catalog</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper stat-icon-emerald">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div>
+            <div class="stat-number counter-animate" data-target="{{ available_copies_sum }}">{{ available_copies_sum }}</div>
+            <div class="stat-label">Copies Available to Loan</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper stat-icon-amber">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <div>
+            <div class="stat-number counter-animate" data-target="{{ active_members_count }}">{{ active_members_count }}</div>
+            <div class="stat-label">Active Library Members</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+          <div class="stat-icon-wrapper stat-icon-rose">
+            <i class="bi bi-arrow-repeat"></i>
+          </div>
+          <div>
+            <div class="stat-number counter-animate" data-target="{{ active_loans_count }}">{{ active_loans_count }}</div>
+            <div class="stat-label">Active Circulation Loans</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Main Catalog Section -->
+<section class="container-fluid px-lg-5 mb-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+      <h2 class="h3 fw-bold mb-1">E-Book & Print Collection</h2>
+      <p class="text-muted small mb-0" id="search-results-counter">
+        Showing {{ books|length }} of {{ total_books_count }} titles
+      </p>
+    </div>
+
+    <!-- Filter Tools -->
+    <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <label for="availability-filter-select" class="small fw-semibold text-muted text-nowrap">Filter Stock:</label>
+        <select id="availability-filter-select" class="form-select form-select-sm" style="min-width: 160px;">
+          <option value="all" {% if not availability_filter %}selected{% endif %}>All Volumes</option>
+          <option value="available" {% if availability_filter == 'available' %}selected{% endif %}>Available Now</option>
+          <option value="borrowed" {% if availability_filter == 'borrowed' %}selected{% endif %}>Currently Checked Out</option>
+        </select>
+      </div>
+
+      {% if user.is_authenticated and user.is_staff %}
+        <a href="{% url 'add_book' %}" class="btn btn-primary-custom btn-sm">
+          <i class="bi bi-plus-lg"></i> Add Book
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Book Catalog Grid -->
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="book-catalog-grid">
+    {% for book in books %}
+      <div
+        class="col book-card-item"
+        data-title="{{ book.title }}"
+        data-author="{{ book.author.name }}"
+        data-genre="{{ book.genre }}"
+        data-isbn="{{ book.isbn }}"
+        data-copies="{{ book.available_copies }}"
+      >
+        <div class="book-card">
+          <!-- Cover -->
+          <div class="book-cover-container">
+            <img src="{{ book.get_cover_image }}" alt="Cover for {{ book.title }}" class="book-cover-img" loading="lazy">
+            <div class="book-cover-overlay">
+              <span class="badge-genre">{{ book.genre }}</span>
+              <div>
+                {% if book.is_available %}
+                  <span class="availability-pill status-in-stock">
+                    <i class="bi bi-check-circle-fill"></i> In Stock ({{ book.available_copies }}/{{ book.total_copies }})
+                  </span>
+                {% else %}
+                  <span class="availability-pill status-out-of-stock">
+                    <i class="bi bi-x-circle-fill"></i> Out of Stock (0/{{ book.total_copies }})
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="book-body">
+            <h3 class="book-title" title="{{ book.title }}">
+              <a href="{% url 'book_detail' book.id %}" class="text-decoration-none text-dark">
+                {{ book.title }}
+              </a>
+            </h3>
+
+            <div class="book-author">
+              <i class="bi bi-pen text-indigo-500"></i>
+              <span>{{ book.author.name }}</span>
+            </div>
+
+            {% if book.description %}
+              <p class="small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                {{ book.description }}
+              </p>
+            {% endif %}
+
+            <div class="book-meta-strip">
+              <div>
+                <i class="bi bi-upc me-1 text-muted"></i>
+                <span class="text-monospace">{{ book.isbn|truncatechars:12 }}</span>
+              </div>
+              <div class="book-copies-indicator">
+                {% if book.is_ebook_available %}
+                  <span class="badge bg-light text-primary border" title="Digital E-Book available">
+                    <i class="bi bi-file-earmark-pdf"></i> E-Book
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="book-actions-bar">
+            <a href="{% url 'book_detail' book.id %}" class="btn btn-outline-custom btn-sm flex-grow-1">
+              <i class="bi bi-eye"></i> Details
+            </a>
+
+            {% if user.is_authenticated and user.is_staff %}
+              {% if book.is_available %}
+                <a href="{% url 'issue_book' %}?book_id={{ book.id }}" class="btn btn-primary-custom btn-sm" title="Issue this book to a member">
+                  <i class="bi bi-box-arrow-up-right"></i> Issue
+                </a>
+              {% else %}
+                <button class="btn btn-secondary-custom btn-sm opacity-50" disabled title="No copies available">
+                  <i class="bi bi-slash-circle"></i> Empty
+                </button>
+              {% endif %}
+            {% else %}
+              {% if book.is_available %}
+                <a href="{% url 'book_detail' book.id %}" class="btn btn-outline-primary btn-sm" title="Available to borrow">
+                  <i class="bi bi-bookmark-plus"></i> Borrow
+                </a>
+              {% else %}
+                <button class="btn btn-light btn-sm text-muted" disabled>
+                  <i class="bi bi-bell"></i> Waitlist
+                </button>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12 py-5 text-center">
+        <div class="p-5 bg-white rounded-4 border shadow-sm">
+          <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+          <h4>No books found matching your criteria</h4>
+          <p class="text-muted">Try resetting search filters or clear the search query.</p>
+          <a href="{% url 'home' %}" class="btn btn-primary-custom btn-sm mt-2">Reset All Filters</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Dynamic No Results Message for Instant JS Filter -->
+  <div id="no-results-found">
+    <div class="p-5 bg-white rounded-4 border shadow-sm max-w-500 mx-auto">
+      <i class="bi bi-search fs-1 text-muted mb-3 d-block"></i>
+      <h4>No Books Found</h4>
+      <p class="text-muted small">No books match your instant search keyword or genre filter. Try adjusting terms.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/search.js' %}"></script>
+{% endblock %}

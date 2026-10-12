@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Digital Library & E-Book Circulation Portal - Search, borrow, and manage digital catalog and physical circulation records seamlessly.">
+  <title>{% block title %}Digital Library & E-Book Circulation Portal{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3 & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-lg-5">
+      <a class="navbar-brand-logo" href="{% url 'home' %}">
+        <div class="brand-icon-box">
+          <i class="bi bi-book-half"></i>
+        </div>
+        <span>Athenaeum<span class="text-indigo-400" style="color: #818cf8;">.Digital</span></span>
+      </a>
+
+      <button class="navbar-toggler text-white border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="bi bi-list fs-2 text-white"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+          <li class="nav-item">
+            <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+              <i class="bi bi-compass"></i> Discover Catalog
+            </a>
+          </li>
+          
+          {% if user.is_authenticated and user.is_staff %}
+            <li class="nav-item dropdown">
+              <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-shield-check"></i> Staff Circulation
+              </a>
+              <ul class="dropdown-menu dropdown-menu-dark shadow-lg">
+                <li><a class="dropdown-item" href="{% url 'staff_circulation_portal' %}"><i class="bi bi-speedometer2 me-2"></i>Circulation Desk</a></li>
+                <li><a class="dropdown-item" href="{% url 'issue_book' %}"><i class="bi bi-box-arrow-up-right me-2 text-primary"></i>Issue Book</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'add_book' %}"><i class="bi bi-plus-circle me-2 text-success"></i>Add New Book</a></li>
+                <li><a class="dropdown-item" href="{% url 'add_author' %}"><i class="bi bi-person-plus me-2 text-info"></i>Add Author</a></li>
+                <li><a class="dropdown-item" href="/admin/" target="_blank"><i class="bi bi-gear me-2 text-warning"></i>Django Admin</a></li>
+              </ul>
+            </li>
+          {% endif %}
+
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'member_dashboard' %}active{% endif %}" href="{% url 'member_dashboard' %}">
+                <i class="bi bi-person-badge"></i> My Dashboard
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+
+        <div class="d-flex align-items-center gap-3">
+          {% if user.is_authenticated %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="text-end d-none d-md-block">
+                <div class="text-white fw-bold small">{{ user.get_full_name|default:user.username }}</div>
+                {% if user.is_staff %}
+                  <span class="badge-role badge-role-staff"><i class="bi bi-star-fill me-1"></i>Staff / Librarian</span>
+                {% else %}
+                  <span class="badge-role badge-role-member"><i class="bi bi-check-circle-fill me-1"></i>Member</span>
+                {% endif %}
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-dark rounded-circle p-2 border border-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-person-circle fs-5 text-light"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg">
+                  <li><h6 class="dropdown-header text-muted">Signed in as <strong>{{ user.username }}</strong></h6></li>
+                  <li><a class="dropdown-item" href="{% url 'member_dashboard' %}"><i class="bi bi-card-checklist me-2"></i>My Borrowed Books</a></li>
+                  {% if user.is_staff %}
+                    <li><a class="dropdown-item" href="{% url 'staff_circulation_portal' %}"><i class="bi bi-inbox-fill me-2"></i>Circulation Desk</a></li>
+                    <li><a class="dropdown-item" href="/admin/"><i class="bi bi-sliders me-2"></i>Django Administration</a></li>
+                  {% endif %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Log Out</a></li>
+                </ul>
+              </div>
+            </div>
+          {% else %}
+            <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-primary-custom btn-sm rounded-pill">
+              <i class="bi bi-person-plus-fill me-1"></i> Join Library
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages Notifications -->
+  <div class="container mt-3">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center" role="alert">
+          {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+          {% elif message.tags == 'error' or message.tags == 'danger' %}
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+          {% elif message.tags == 'warning' %}
+            <i class="bi bi-exclamation-circle-fill fs-5 me-2 text-warning"></i>
+          {% else %}
+            <i class="bi bi-info-circle-fill fs-5 me-2 text-primary"></i>
+          {% endif %}
+          <div class="flex-grow-1">{{ message }}</div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Main Content Body -->
+  <main class="flex-grow-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer-custom">
+    <div class="container-fluid px-lg-5">
+      <div class="row g-4 mb-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="brand-icon-box" style="width: 32px; height: 32px; font-size: 1rem;">
+              <i class="bi bi-book-half"></i>
+            </div>
+            <h5 class="text-white mb-0 fw-bold">Athenaeum Digital Library</h5>
+          </div>
+          <p class="small text-secondary">
+            A state-of-the-art E-Book circulation platform and digital repository providing effortless access to literature, academic research, and real-time loan management.
+          </p>
+        </div>
+
+        <div class="col-lg-2 col-md-3 col-6">
+          <h6 class="text-white fw-bold mb-3">Circulation</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-2"><a href="{% url 'home' %}" class="footer-link">Browse Catalog</a></li>
+            <li class="mb-2"><a href="{% url 'member_dashboard' %}" class="footer-link">Member Portal</a></li>
+            <li class="mb-2"><a href="{% url 'staff_circulation_portal' %}" class="footer-link">Circulation Desk</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-2 col-md-3 col-6">
+          <h6 class="text-white fw-bold mb-3">Resources</h6>
+          <ul class="list-unstyled small">
+            <li class="mb-2"><a href="/admin/" class="footer-link">Django Admin</a></li>
+            <li class="mb-2"><a href="{% url 'issue_book' %}" class="footer-link">Issue Books</a></li>
+            <li class="mb-2"><a href="{% url 'home' %}?availability=available" class="footer-link">Available Copies</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-4 col-md-12">
+          <h6 class="text-white fw-bold mb-3">Circulation Rules</h6>
+          <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+            <div class="d-flex align-items-center gap-2 small text-light mb-1">
+              <i class="bi bi-calendar-check text-info"></i> Standard Borrow Duration: <strong>14 Days</strong>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-light mb-1">
+              <i class="bi bi-cash-stack text-warning"></i> Overdue Fine Rate: <strong>$1.00 / day</strong>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-light">
+              <i class="bi bi-bookmark-star text-success"></i> Maximum Loan Quota: <strong>5 Books</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-top border-secondary border-opacity-25 pt-3 d-flex flex-wrap justify-content-between align-items-center small text-secondary">
+        <div>&copy; 2026 Athenaeum Digital Library & E-Book Circulation Portal. Powered by Django 6 & Bootstrap 5.</div>
+        <div class="mt-2 mt-md-0">
+          <span class="badge bg-dark border border-secondary text-light px-3 py-1">SQLite3 • WhiteNoise • Gunicorn Ready</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: digital-library-circulation-portal
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn library_portal.wsgi:application --bind 0.0.0.0:$PORT"
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"

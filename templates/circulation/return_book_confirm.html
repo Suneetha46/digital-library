@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Return Book Confirmation #{{ record.id }} - Circulation Desk{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'staff_circulation_portal' %}">Circulation Desk</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Return Book #{{ record.id }}</li>
+        </ol>
+      </nav>
+
+      <div class="form-card">
+        <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+          <div class="brand-icon-box" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <i class="bi bi-box-arrow-in-down-left"></i>
+          </div>
+          <div>
+            <h2 class="h4 fw-bold mb-0">Confirm Book Return & Fine Assessment</h2>
+            <p class="text-muted small mb-0">Loan ID #{{ record.id }} • Return Date: {{ today|date:"M d, Y" }}</p>
+          </div>
+        </div>
+
+        <!-- Book & Member Summary Card -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-7">
+            <div class="p-3 border rounded-3 bg-light">
+              <span class="text-muted small text-uppercase fw-bold d-block mb-1">Book Being Returned</span>
+              <h5 class="fw-bold mb-1">{{ record.book.title }}</h5>
+              <div class="small text-muted mb-2">Author: {{ record.book.author.name }} • ISBN: {{ record.book.isbn }}</div>
+              <div class="d-flex align-items-center gap-2 small">
+                <span class="badge bg-secondary">Current Avail: {{ record.book.available_copies }}</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-success">After Return: {{ record.book.available_copies|add:1 }} copies</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-5">
+            <div class="p-3 border rounded-3 bg-light">
+              <span class="text-muted small text-uppercase fw-bold d-block mb-1">Member Information</span>
+              <h6 class="fw-bold mb-1">{{ record.member.user.get_full_name|default:record.member.user.username }}</h6>
+              <div class="small text-muted font-monospace">{{ record.member.membership_id }}</div>
+              <div class="small text-muted mt-1">{{ record.member.phone|default:"No phone on file" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dates & Fine Calculation Box -->
+        <div class="card p-3 mb-4 {% if is_overdue %}border-danger bg-danger-subtle bg-opacity-10{% else %}border-success bg-success-subtle bg-opacity-10{% endif %}">
+          <div class="row align-items-center">
+            <div class="col-sm-4 text-center border-end">
+              <span class="text-muted small d-block">Issue Date</span>
+              <strong class="fs-6">{{ record.issue_date|date:"M d, Y" }}</strong>
+            </div>
+
+            <div class="col-sm-4 text-center border-end">
+              <span class="text-muted small d-block">Due Date</span>
+              <strong class="fs-6">{{ record.due_date|date:"M d, Y" }}</strong>
+            </div>
+
+            <div class="col-sm-4 text-center">
+              <span class="text-muted small d-block">Return Date</span>
+              <strong class="fs-6 text-primary">{{ today|date:"M d, Y" }} (Today)</strong>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Overdue & Fine Status -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center px-2">
+            <div>
+              {% if is_overdue %}
+                <span class="badge bg-danger fs-6 px-3 py-2">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i> Overdue by {{ days_overdue }} Days
+                </span>
+                <div class="small text-muted mt-1">Rate: $1.00 per day overdue ({{ days_overdue }} days &times; $1.00)</div>
+              {% else %}
+                <span class="badge bg-success fs-6 px-3 py-2">
+                  <i class="bi bi-check-circle-fill me-1"></i> Returned On Time
+                </span>
+                <div class="small text-muted mt-1">Book returned within the 14-day borrowing window.</div>
+              {% endif %}
+            </div>
+
+            <div class="text-end mt-2 mt-sm-0">
+              <div class="text-muted small fw-bold">Calculated Fine</div>
+              <div class="display-6 fw-bold {% if is_overdue %}text-danger{% else %}text-success{% endif %}">
+                ${{ estimated_fine|floatformat:2 }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Return Form Submission -->
+        <form method="POST" action="{% url 'return_book' %}">
+          {% csrf_token %}
+          <input type="hidden" name="record_id" value="{{ record.id }}">
+
+          {% if is_overdue %}
+            <div class="form-check form-switch mb-3 p-3 bg-white border rounded">
+              <input class="form-check-input ms-0 me-3" type="checkbox" role="switch" name="fine_collected" id="fine_collected_check" checked>
+              <label class="form-check-label fw-bold text-dark" for="fine_collected_check">
+                Mark fine of ${{ estimated_fine|floatformat:2 }} as Paid / Collected at circulation counter
+              </label>
+              <div class="small text-muted ms-5">Uncheck this if the member has not yet paid the fine today.</div>
+            </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <label for="return_notes" class="form-label">Return Notes & Condition (Optional)</label>
+            <textarea name="notes" id="return_notes" class="form-control" rows="2" placeholder="e.g. Returned in excellent condition, spine clean"></textarea>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="{% url 'staff_circulation_portal' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-success px-4 py-2 fw-bold">
+              <i class="bi bi-check2-all me-1"></i> Process Return & Restock Copy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

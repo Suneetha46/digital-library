@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Member Dashboard - Athenaeum Digital Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+  <!-- Welcome Banner -->
+  <div class="row g-4 mb-4 align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-icon-box" style="width: 50px; height: 50px; font-size: 1.5rem;">
+          <i class="bi bi-person-badge"></i>
+        </div>
+        <div>
+          <h1 class="h3 fw-bold mb-1">
+            Welcome back, {{ user.get_full_name|default:user.username }}!
+          </h1>
+          <p class="text-muted small mb-0">
+            Digital Library Member ID: <span class="font-monospace fw-bold text-dark">{{ member.membership_id }}</span> • Joined {{ member.joined_date|date:"F Y" }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 text-lg-end">
+      <a href="{% url 'home' %}" class="btn btn-primary-custom">
+        <i class="bi bi-compass me-1"></i> Browse Library Catalog
+      </a>
+    </div>
+  </div>
+
+  <!-- Member Overview Row -->
+  <div class="row g-4 mb-4">
+    <!-- Digital Membership Card -->
+    <div class="col-lg-4">
+      <div class="member-profile-card h-100 d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="member-card-chip">
+              <i class="bi bi-cpu"></i>
+            </div>
+            <span class="badge bg-white bg-opacity-25 px-3 py-1 rounded-pill small">Active Member</span>
+          </div>
+
+          <div class="text-uppercase small text-indigo-200 letter-spacing-1 mb-1">Digital Card Number</div>
+          <div class="member-card-num">{{ member.membership_id }}</div>
+
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="small text-muted text-uppercase" style="font-size: 0.7rem; color: #94a3b8 !important;">Cardholder</div>
+              <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+            </div>
+            <div>
+              <div class="small text-muted text-uppercase" style="font-size: 0.7rem; color: #94a3b8 !important;">Quota Limit</div>
+              <div class="fw-bold">{{ member.active_borrows_count }} / {{ member.max_books_allowed }} Books</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center small text-indigo-200">
+          <span><i class="bi bi-shield-check me-1"></i>Athenaeum Circulation Network</span>
+          <span class="font-monospace">{{ member.joined_date|date:"m/y" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="col-lg-8">
+      <div class="row g-3 h-100">
+        <div class="col-sm-6">
+          <div class="card-premium h-100 p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-wrapper stat-icon-indigo">
+              <i class="bi bi-book"></i>
+            </div>
+            <div>
+              <div class="h3 fw-bold mb-0 text-primary">{{ active_count }}</div>
+              <div class="text-muted small fw-semibold">Currently Borrowed</div>
+              <div class="small text-muted">Max capacity: {{ member.max_books_allowed }} volumes</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6">
+          <div class="card-premium h-100 p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-wrapper stat-icon-rose">
+              <i class="bi bi-exclamation-octagon-fill"></i>
+            </div>
+            <div>
+              <div class="h3 fw-bold mb-0 text-danger">{{ overdue_count }}</div>
+              <div class="text-muted small fw-semibold">Overdue Books</div>
+              <div class="small text-danger">Requires immediate return</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6">
+          <div class="card-premium h-100 p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-wrapper stat-icon-emerald">
+              <i class="bi bi-journal-check"></i>
+            </div>
+            <div>
+              <div class="h3 fw-bold mb-0 text-success">{{ total_books_read }}</div>
+              <div class="text-muted small fw-semibold">Completed Loans</div>
+              <div class="small text-muted">Lifetime reading history</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6">
+          <div class="card-premium h-100 p-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-wrapper stat-icon-amber">
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div>
+              <div class="h3 fw-bold mb-0 {% if unpaid_fines > 0 %}text-danger{% else %}text-muted{% endif %}">
+                ${{ unpaid_fines|floatformat:2 }}
+              </div>
+              <div class="text-muted small fw-semibold">Outstanding Fines</div>
+              <div class="small text-muted">Payable at circulation desk</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Currently Borrowed Books Section with Overdue Alerts -->
+  <div class="card-premium mb-5">
+    <div class="card-header-clean">
+      <div>
+        <h4 class="fw-bold mb-1">
+          <i class="bi bi-bookmark-star-fill text-primary me-2"></i>Active Borrowed Books
+        </h4>
+        <p class="text-muted small mb-0">Track your current active loans, remaining days, and return due dates.</p>
+      </div>
+      <span class="badge bg-primary px-3 py-2 rounded-pill fw-semibold">{{ active_count }} Active</span>
+    </div>
+
+    {% if active_borrows %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Book Title & Cover</th>
+              <th>Genre</th>
+              <th>Borrowed On</th>
+              <th>Due Date</th>
+              <th>Loan Status</th>
+              <th>Overdue Fine</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in active_borrows %}
+              <tr class="{% if item.is_currently_overdue %}table-danger bg-opacity-25{% endif %}">
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <img src="{{ item.book.get_cover_image }}" alt="Cover" class="rounded shadow-sm" style="width: 44px; height: 58px; object-fit: cover;">
+                    <div>
+                      <a href="{% url 'book_detail' item.book.id %}" class="fw-bold text-dark text-decoration-none">
+                        {{ item.book.title }}
+                      </a>
+                      <div class="small text-muted">by {{ item.book.author.name }} • ISBN: {{ item.book.isbn }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ item.book.genre }}</span>
+                </td>
+                <td>{{ item.issue_date|date:"M d, Y" }}</td>
+                <td>
+                  <strong class="{% if item.is_currently_overdue %}text-danger{% else %}text-dark{% endif %}">
+                    {{ item.due_date|date:"M d, Y" }}
+                  </strong>
+                  {% if not item.is_currently_overdue %}
+                    <div class="small text-success">{{ item.days_remaining }} days remaining</div>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.is_currently_overdue %}
+                    <span class="pulse-badge badge-overdue">
+                      <i class="bi bi-exclamation-triangle-fill"></i> OVERDUE ({{ item.overdue_days }} days past due)
+                    </span>
+                  {% else %}
+                    <span class="pulse-badge badge-active-loan">
+                      <i class="bi bi-clock-history"></i> Active Loan
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.is_currently_overdue %}
+                    <span class="fw-bold text-danger">${{ item.estimated_fine|floatformat:2 }}</span>
+                    <div class="small text-muted">($1.00/day)</div>
+                  {% else %}
+                    <span class="text-muted small">$0.00</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center bg-light rounded-3">
+        <i class="bi bi-book-half fs-1 text-muted mb-2 d-block"></i>
+        <h5 class="fw-bold text-dark">You have no active book loans</h5>
+        <p class="text-muted small mb-3">Browse our digital collection and borrow exciting titles today.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary-custom btn-sm">Explore Book Catalog</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Borrowing History Section -->
+  <div class="card-premium">
+    <div class="card-header-clean">
+      <div>
+        <h4 class="fw-bold mb-1">
+          <i class="bi bi-clock-history text-secondary me-2"></i>Borrowing History
+        </h4>
+        <p class="text-muted small mb-0">Record of previously returned books and settled fines.</p>
+      </div>
+      <span class="badge bg-secondary px-3 py-2 rounded-pill fw-semibold">{{ total_books_read }} Past Loans</span>
+    </div>
+
+    {% if borrowing_history %}
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Book Title</th>
+              <th>Author</th>
+              <th>Borrowed Date</th>
+              <th>Due Date</th>
+              <th>Returned On</th>
+              <th>Fine Assessed</th>
+              <th>Payment Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in borrowing_history %}
+              <tr>
+                <td>
+                  <a href="{% url 'book_detail' item.book.id %}" class="fw-bold text-dark text-decoration-none">
+                    {{ item.book.title }}
+                  </a>
+                </td>
+                <td class="text-muted small">{{ item.book.author.name }}</td>
+                <td>{{ item.issue_date|date:"M d, Y" }}</td>
+                <td>{{ item.due_date|date:"M d, Y" }}</td>
+                <td>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-check2 me-1"></i>{{ item.return_date|date:"M d, Y" }}
+                  </span>
+                </td>
+                <td>
+                  {% if item.fine_amount > 0 %}
+                    <span class="text-danger fw-bold">${{ item.fine_amount|floatformat:2 }}</span>
+                  {% else %}
+                    <span class="text-muted small">$0.00</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.fine_amount > 0 %}
+                    {% if item.fine_paid %}
+                      <span class="badge bg-success">Settled</span>
+                    {% else %}
+                      <span class="badge bg-danger">Pending Payment</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted small">No Fine</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-4 text-center text-muted">
+        <p class="small mb-0">No past borrowing history recorded yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Issue Book to Member - Circulation Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'staff_circulation_portal' %}">Circulation Desk</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Issue Book</li>
+        </ol>
+      </nav>
+
+      <div class="form-card">
+        <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+          <div class="brand-icon-box" style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+            <i class="bi bi-box-arrow-up-right"></i>
+          </div>
+          <div>
+            <h2 class="h4 fw-bold mb-0">Issue Book to Member</h2>
+            <p class="text-muted small mb-0">Loan checkout • Auto-decrements available copies • 14 days default period</p>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger shadow-sm">
+            {% for error in form.non_field_errors %}
+              <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'issue_book' %}">
+          {% csrf_token %}
+
+          <!-- Member Selection -->
+          <div class="mb-4">
+            <label for="id_member" class="form-label">
+              <i class="bi bi-person-check text-primary me-1"></i> Library Member <span class="text-danger">*</span>
+            </label>
+            {{ form.member }}
+            <div class="form-text text-muted small">
+              {{ form.member.help_text }} (Members at 5 active loans will be rejected).
+            </div>
+            {% if form.member.errors %}
+              <div class="text-danger small mt-1">{{ form.member.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Book Selection -->
+          <div class="mb-4">
+            <label for="id_book" class="form-label">
+              <i class="bi bi-book text-primary me-1"></i> Book Title to Issue <span class="text-danger">*</span>
+            </label>
+            {{ form.book }}
+            <div class="form-text text-muted small">
+              {{ form.book.help_text }}.
+            </div>
+            {% if form.book.errors %}
+              <div class="text-danger small mt-1">{{ form.book.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Loan Duration / Due Date info -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="id_due_days" class="form-label">
+                <i class="bi bi-calendar-range text-primary me-1"></i> Loan Duration (Days)
+              </label>
+              {{ form.due_days }}
+              <div class="form-text text-muted small">
+                {{ form.due_days.help_text }}
+              </div>
+              {% if form.due_days.errors %}
+                <div class="text-danger small mt-1">{{ form.due_days.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted">
+                <i class="bi bi-clock-history me-1"></i> Calculated Due Date Preview
+              </label>
+              <div class="p-2 border rounded bg-light text-primary fw-bold" id="calculated-due-preview">
+                <i class="bi bi-calendar-event me-2"></i>14 Days from Today
+              </div>
+              <div class="form-text text-muted small">
+                Overdue fine of $1.00/day applies if returned after this date.
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-4">
+            <label for="id_notes" class="form-label">
+              <i class="bi bi-journal-text me-1"></i> Staff Notes / Book Condition (Optional)
+            </label>
+            {{ form.notes }}
+            {% if form.notes.errors %}
+              <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Notice box -->
+          <div class="p-3 bg-light rounded-3 mb-4 border d-flex align-items-center gap-3">
+            <i class="bi bi-info-circle-fill fs-3 text-indigo-500"></i>
+            <div class="small text-muted">
+              <strong>System Action:</strong> Upon issuing, the book's <code>available_copies</code> will automatically decrement by 1. If 0 copies remain, further checkout requests will be prevented.
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="{% url 'staff_circulation_portal' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Back to Desk
+            </a>
+            <button type="submit" class="btn btn-primary-custom px-4 py-2">
+              <i class="bi bi-check2-circle me-1"></i> Confirm & Issue Book
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const daysInput = document.getElementById('issue-due-days');
+    const previewBox = document.getElementById('calculated-due-preview');
+
+    function updatePreview() {
+      const days = parseInt(daysInput.value || '14', 10);
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + days);
+
+      const options = { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' };
+      if (previewBox) {
+        previewBox.innerHTML = `<i class="bi bi-calendar-event me-2"></i>${targetDate.toLocaleDateString(undefined, options)} (${days} days)`;
+      }
+    }
+
+    if (daysInput) {
+      daysInput.addEventListener('input', updatePreview);
+      updatePreview();
+    }
+  });
+</script>
+{% endblock %}
