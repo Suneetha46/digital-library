@@ -11,3 +11,6 @@ python manage.py collectstatic --no-input
 
 # Apply database migrations
 python manage.py migrate
+
+# Create superuser and seed initial library data
+python create_superuser.py
